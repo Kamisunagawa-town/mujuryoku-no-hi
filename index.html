@@ -6,11 +6,11 @@
 <title>無重力の日｜上砂川町</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
   body {
     font-family: "Hiragino Sans", "Meiryo", sans-serif;
     background: linear-gradient(180deg, #0b1026 0%, #1a2151 100%);
-    color: #fff; overflow: hidden; text-align: center;
-    transition: transform .05s ease-out;
+    color: #fff; overflow: hidden;
   }
   #stars {
     position: fixed; inset: 0; z-index: 0;
@@ -21,230 +21,192 @@
       radial-gradient(1px 1px at 40% 80%, #fff, transparent),
       radial-gradient(1px 1px at 90% 50%, #fff, transparent);
   }
-  header { position: relative; z-index: 2; padding: 24px 16px 8px; }
-  h1 { font-size: 26px; letter-spacing: 2px; }
-  .sub { font-size: 13px; opacity: .8; margin-top: 6px; }
-  #status {
+  /* 記事エリア */
+  #article {
     position: relative; z-index: 2;
-    font-size: 18px; margin-top: 8px; min-height: 26px;
-    color: #7ad7ff; font-weight: bold;
+    max-width: 720px; margin: 0 auto;
+    padding: 40px 24px 120px;
+    height: 100%; overflow-y: auto;
   }
-  .btns { position: relative; z-index: 2; margin-top: 14px; }
+  #article h1 { font-size: 28px; letter-spacing: 1px; margin-bottom: 6px; }
+  #article .date { font-size: 14px; color: #7ad7ff; margin-bottom: 24px; }
+  #article p { font-size: 16px; line-height: 2; margin-bottom: 20px; }
+  /* 浮遊させる単語のラッパー */
+  .word { display: inline-block; white-space: nowrap; }
+  /* 操作ボタン */
+  .btns {
+    position: fixed; bottom: 24px; left: 0; width: 100%;
+    text-align: center; z-index: 5;
+  }
   button {
-    margin: 6px;
-    padding: 14px 28px;
+    margin: 6px; padding: 14px 28px;
     font-size: 17px; font-weight: bold;
     border: none; border-radius: 50px; cursor: pointer;
     transition: transform .1s;
   }
   button:hover { transform: scale(1.05); }
   button:disabled { opacity: .5; cursor: not-allowed; }
-  #launchBtn {
-    color: #0b1026; background: #7ad7ff;
-    box-shadow: 0 0 20px rgba(122,215,255,.6);
+  #zeroGBtn { color: #0b1026; background: #7ad7ff; box-shadow: 0 0 20px rgba(122,215,255,.6); }
+  #resetBtn { color: #0b1026; background: #feca57; box-shadow: 0 0 20px rgba(254,202,87,.6); }
+  /* 浮遊中の文字描画用キャンバス */
+  #floatCanvas { position: fixed; inset: 0; z-index: 4; pointer-events: none; display: none; }
+  #status {
+    position: fixed; top: 16px; width: 100%; text-align: center;
+    z-index: 6; font-size: 18px; font-weight: bold; color: #7ad7ff;
+    min-height: 24px;
   }
-  #shakeBtn {
-    color: #0b1026; background: #feca57;
-    box-shadow: 0 0 20px rgba(254,202,87,.6);
-  }
-  canvas { position: fixed; inset: 0; z-index: 1; }
-  footer {
-    position: fixed; bottom: 8px; width: 100%;
-    z-index: 2; font-size: 11px; opacity: .6;
-  }
-  footer a { color: #7ad7ff; }
 </style>
 </head>
 <body>
   <div id="stars"></div>
-  <header>
-    <h1>🪐 無重力の日</h1>
-    <p class="sub">6月16日 ｜ 北海道・上砂川町</p>
-    <p class="sub">旧JAMICでは立坑で約10秒間の無重力を再現していました</p>
-  </header>
-  <div id="status">ボタンを押すと10秒間、無重力になります</div>
+  <div id="status"></div>
+
+  <!-- note記事の再現 -->
+  <article id="article">
+    <h1>🪐 6月16日は「無重力の日」</h1>
+    <p class="date">北海道・上砂川町</p>
+
+    <p>6月16日は「無重力の日」です。「む（6）じゅう（10）りょく（6）」の語呂合わせから、上砂川町が1991年3月に制定しました。</p>
+
+    <p>その由来は、かつて町にあった「地下無重力実験センター」。旧三井砂川炭鉱の立坑を利用し、深さ710メートルの縦穴に真空カプセルを落下させることで、約10秒間の微小重力状態をつくり出す、日本初の本格的な地下微小重力実験施設でした。</p>
+
+    <p>1989年に設立され、宇宙開発に関わるさまざまな実験が行われました。しかし1回の実験費用が高額だったことなどから利用が伸び悩み、2003年に閉鎖されました。</p>
+
+    <p>それでも、その宇宙開発への貢献は高く評価され、小惑星イトカワのクレーターの一つには「Kamisunagawa（上砂川）」の名が付けられています。地下深くから宇宙へ——上砂川町は、今も無重力とともにあります。</p>
+
+    <p>さあ、下のボタンを押してください。この記事の文字が、重力を失って浮かび上がります。</p>
+  </article>
+
+  <div id="status"></div>
   <div class="btns">
-    <button id="launchBtn">無重力スタート 🚀</button>
-    <button id="shakeBtn">箱を揺らす 🫨</button>
+    <button id="zeroGBtn">文字を無重力に 🚀</button>
+    <button id="resetBtn">元に戻す 🌍</button>
   </div>
-  <footer>
-    上砂川町 無重力の日 記念サイト ｜
-    <a href="https://kamisunagawa-town.note.jp/" target="_blank">上砂川町note</a>
-  </footer>
+
+  <canvas id="floatCanvas"></canvas>
 
   <!-- 物理エンジン matter.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
   <script>
-    const { Engine, Render, Runner, Bodies, Composite, Body, World } = Matter;
+    const { Engine, Render, Runner, Bodies, Body, World } = Matter;
 
-    const engine = Engine.create();
-    const world = engine.world;
-    engine.gravity.y = 1; // 通常の重力
+    const zeroGBtn = document.getElementById('zeroGBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const status   = document.getElementById('status');
+    const canvas   = document.getElementById('floatCanvas');
+    const article  = document.getElementById('article');
 
-    const render = Render.create({
-      element: document.body,
-      engine: engine,
-      options: {
-        width: window.innerWidth,
-        height: window.innerHeight,
-        wireframes: false,
-        background: 'transparent'
-      }
-    });
-    Render.run(render);
-    const runner = Runner.create();
-    Runner.run(runner, engine);
+    let engine, render, runner, letterBodies = [], running = false;
 
-    // 壁(床・左右・天井)を作る
-    const W = window.innerWidth, H = window.innerHeight;
-    const wallOpts = { isStatic: true, render: { visible: false } };
-    World.add(world, [
-      Bodies.rectangle(W/2, H+30, W, 60, wallOpts),   // 床
-      Bodies.rectangle(-30, H/2, 60, H*2, wallOpts),   // 左
-      Bodies.rectangle(W+30, H/2, 60, H*2, wallOpts),  // 右
-      Bodies.rectangle(W/2, -30, W, 60, wallOpts)      // 天井
-    ]);
+    // ===== 記事の文字を1文字ずつ <span> に分割 =====
+    function splitText() {
+      const ps = article.querySelectorAll('h1, p');
+      ps.forEach(p => {
+        const text = p.textContent;
+        p.textContent = '';
+        // 単語（日本語は1文字ずつ）にして折り返し可能に
+        [...text].forEach(ch => {
+          const span = document.createElement('span');
+          span.className = 'word';
+          span.textContent = ch;
+          // スペースは幅を確保
+          if (ch === ' ') span.innerHTML = '&nbsp;';
+          p.appendChild(span);
+        });
+      });
+    }
+    splitText();
 
-    // 浮かせる絵文字オブジェクトを生成
-    const emojis = ['🛰️','⭐','🌙','☄️','🪐','👨‍🚀','🍎','🎈','💎','🔧'];
-    const colors = ['#ff6b6b','#feca57','#48dbfb','#1dd1a1','#f368e0','#ff9ff3'];
-    const bodies = [];
-    function spawnObjects() {
-      for (let i = 0; i < 28; i++) {
-        const size = 24 + Math.random() * 24;
-        const b = Bodies.circle(
-          80 + Math.random() * (W - 160),
-          80 + Math.random() * (H - 200),
-          size,
-          {
-            restitution: 0.8,
-            render: { fillStyle: colors[i % colors.length] }
-          }
+    // ===== 無重力スタート =====
+    zeroGBtn.addEventListener('click', () => {
+      if (running) return;
+      running = true;
+      zeroGBtn.disabled = true;
+      status.textContent = '🌌 文字が無重力に浮かんでいます…';
+
+      const W = window.innerWidth, H = window.innerHeight;
+      canvas.width = W; canvas.height = H;
+      canvas.style.display = 'block';
+
+      // 物理エンジン準備
+      engine = Engine.create();
+      engine.gravity.y = 0; // ★無重力
+      render = Render.create({
+        canvas: canvas, engine: engine,
+        options: { width: W, height: H, wireframes: false, background: 'transparent' }
+      });
+      Render.run(render);
+      runner = Runner.create();
+      Runner.run(runner, engine);
+
+      // 壁（画面外に逃げないように）
+      const wallOpts = { isStatic: true, render: { visible: false } };
+      World.add(engine.world, [
+        Bodies.rectangle(W/2, H+40, W, 80, wallOpts),
+        Bodies.rectangle(-40, H/2, 80, H*2, wallOpts),
+        Bodies.rectangle(W+40, H/2, 80, H*2, wallOpts),
+        Bodies.rectangle(W/2, -40, W, 80, wallOpts)
+      ]);
+
+      // 各文字の現在位置に物理ボディを作り、文字は非表示にする
+      letterBodies = [];
+      const spans = article.querySelectorAll('.word');
+      spans.forEach(span => {
+        const ch = span.textContent.trim();
+        if (!ch) return; // 空白はスキップ
+        const r = span.getBoundingClientRect();
+        const fontSize = parseFloat(getComputedStyle(span).fontSize);
+        const body = Bodies.rectangle(
+          r.left + r.width/2, r.top + r.height/2,
+          r.width || fontSize, r.height || fontSize,
+          { restitution: 0.6, frictionAir: 0.01,
+            render: { visible: false } }
         );
-        b.emoji = emojis[i % emojis.length];
-        b.size = size;
-        bodies.push(b);
-      }
-      World.add(world, bodies);
-    }
-    spawnObjects();
+        body.char = ch;
+        body.fontSize = fontSize;
+        letterBodies.push(body);
+        span.style.visibility = 'hidden'; // 元の文字を隠す
+        // ふわっと初速
+        Body.setVelocity(body, {
+          x: (Math.random() - 0.5) * 5,
+          y: (Math.random() - 0.5) * 5
+        });
+        Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.1);
+      });
+      World.add(engine.world, letterBodies);
 
-    // 絵文字を円の上に描画
-    const ctx = render.context;
-    Matter.Events.on(render, 'afterRender', () => {
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      bodies.forEach(b => {
-        ctx.save();
-        ctx.translate(b.position.x, b.position.y);
-        ctx.rotate(b.angle);
-        ctx.font = (b.size * 1.2) + 'px sans-serif';
-        ctx.fillText(b.emoji, 0, 0);
-        ctx.restore();
+      // 文字をcanvasに描画
+      const ctx = render.context;
+      Matter.Events.on(render, 'afterRender', () => {
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        letterBodies.forEach(b => {
+          ctx.save();
+          ctx.translate(b.position.x, b.position.y);
+          ctx.rotate(b.angle);
+          ctx.font = b.fontSize + 'px "Hiragino Sans","Meiryo",sans-serif';
+          ctx.fillText(b.char, 0, 0);
+          ctx.restore();
+        });
       });
     });
 
-    // ===== 共通：箱を揺らす関数 =====
-    // duration ミリ秒だけ画面を揺らし、中身をかき混ぜる
-    function shakeBox(duration) {
-      const shakeInterval = setInterval(() => {
-        const dx = (Math.random() - 0.5) * 24;
-        const dy = (Math.random() - 0.5) * 24;
-        document.body.style.transform = `translate(${dx}px, ${dy}px)`;
-        bodies.forEach(b => {
-          Body.applyForce(b, b.position, {
-            x: (Math.random() - 0.5) * 0.006 * b.mass,
-            y: (Math.random() - 0.5) * 0.006 * b.mass
-          });
-        });
-      }, 60);
-
-      setTimeout(() => {
-        clearInterval(shakeInterval);
-        document.body.style.transform = 'translate(0, 0)';
-      }, duration);
-
-      return shakeInterval;
-    }
-
-    // ===== 「箱を揺らす」ボタン =====
-    const shakeBtn = document.getElementById('shakeBtn');
-    let shaking = false;
-    shakeBtn.addEventListener('click', () => {
-      if (shaking) return;
-      shaking = true;
-      shakeBtn.disabled = true;
-      // 1.2秒間だけ揺らす
-      shakeBox(1200);
-      setTimeout(() => {
-        shaking = false;
-        shakeBtn.disabled = false;
-      }, 1200);
-    });
-
-    // ===== 無重力スタート処理 =====
-    const btn = document.getElementById('launchBtn');
-    const status = document.getElementById('status');
-    let active = false;
-    let gravShake = null;
-
-    btn.addEventListener('click', () => {
-      if (active) return;
-      active = true;
-      btn.disabled = true;
-
-      // 無重力ON
-      engine.gravity.y = 0;
-      // 各オブジェクトにふわっとした初速を与える
-      bodies.forEach(b => {
-        Body.setVelocity(b, {
-          x: (Math.random() - 0.5) * 6,
-          y: (Math.random() - 0.5) * 6
-        });
-      });
-
-      // 無重力中はずっと揺らし続ける（10秒間）
-      gravShake = setInterval(() => {
-        const dx = (Math.random() - 0.5) * 24;
-        const dy = (Math.random() - 0.5) * 24;
-        document.body.style.transform = `translate(${dx}px, ${dy}px)`;
-        bodies.forEach(b => {
-          Body.applyForce(b, b.position, {
-            x: (Math.random() - 0.5) * 0.004 * b.mass,
-            y: (Math.random() - 0.5) * 0.004 * b.mass
-          });
-        });
-      }, 60);
-
-      // 10秒カウントダウン
-      let count = 10;
-      status.textContent = `🌌 無重力状態！ あと ${count} 秒`;
-      const timer = setInterval(() => {
-        count--;
-        if (count > 0) {
-          status.textContent = `🌌 無重力状態！ あと ${count} 秒`;
-        } else {
-          clearInterval(timer);
-          // 揺れを止めて画面を元に戻す
-          clearInterval(gravShake);
-          gravShake = null;
-          document.body.style.transform = 'translate(0, 0)';
-          // 重力復活！
-          engine.gravity.y = 1;
-          status.textContent = '🌍 重力が戻りました！';
-          setTimeout(() => {
-            status.textContent = 'もう一度押すと、また無重力に！';
-            btn.disabled = false;
-            active = false;
-          }, 2500);
-        }
-      }, 1000);
-    });
-
-    // ウィンドウリサイズ対応
-    window.addEventListener('resize', () => {
-      render.canvas.width = window.innerWidth;
-      render.canvas.height = window.innerHeight;
+    // ===== 元に戻す =====
+    resetBtn.addEventListener('click', () => {
+      if (!running) return;
+      running = false;
+      // 物理エンジンを停止・破棄
+      if (render) { Render.stop(render); }
+      if (runner) { Runner.stop(runner); }
+      if (engine) { World.clear(engine.world); Engine.clear(engine); }
+      canvas.style.display = 'none';
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // 元の文字を表示し直す
+      article.querySelectorAll('.word').forEach(s => s.style.visibility = 'visible');
+      status.textContent = '';
+      zeroGBtn.disabled = false;
     });
   </script>
 </body>
