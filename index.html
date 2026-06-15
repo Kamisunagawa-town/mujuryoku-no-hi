@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>無重力の日｜上砂川町</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Hiragino Sans", "Meiryo", sans-serif;
+    background: linear-gradient(180deg, #0b1026 0%, #1a2151 100%);
+    color: #fff; overflow: hidden; text-align: center;
+  }
+  #stars {
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, #fff, transparent),
+      radial-gradient(1px 1px at 60% 70%, #fff, transparent),
+      radial-gradient(2px 2px at 80% 20%, #fff, transparent),
+      radial-gradient(1px 1px at 40% 80%, #fff, transparent),
+      radial-gradient(1px 1px at 90% 50%, #fff, transparent);
+  }
+  header { position: relative; z-index: 2; padding: 24px 16px 8px; }
+  h1 { font-size: 26px; letter-spacing: 2px; }
+  .sub { font-size: 13px; opacity: .8; margin-top: 6px; }
+  #status {
+    position: relative; z-index: 2;
+    font-size: 18px; margin-top: 8px; min-height: 26px;
+    color: #7ad7ff; font-weight: bold;
+  }
+  #launchBtn {
+    position: relative; z-index: 2;
+    margin-top: 14px; padding: 14px 32px;
+    font-size: 18px; font-weight: bold;
+    color: #0b1026; background: #7ad7ff; border: none;
+    border-radius: 50px; cursor: pointer;
+    box-shadow: 0 0 20px rgba(122,215,255,.6);
+    transition: transform .1s;
+  }
+  #launchBtn:hover { transform: scale(1.05); }
+  #launchBtn:disabled { opacity: .5; cursor: not-allowed; }
+  canvas { position: fixed; inset: 0; z-index: 1; }
+  footer {
+    position: fixed; bottom: 8px; width: 100%;
+    z-index: 2; font-size: 11px; opacity: .6;
+  }
+  footer a { color: #7ad7ff; }
+</style>
+</head>
+<body>
+  <div id="stars"></div>
+  <header>
+    <h1>🪐 無重力の日</h1>
+    <p class="sub">6月16日 ｜ 北海道・上砂川町</p>
+    <p class="sub">旧JAMICでは立坑で約10秒間の無重力を再現していました</p>
+  </header>
+  <div id="status">ボタンを押すと10秒間、無重力になります</div>
+  <button id="launchBtn">無重力スタート 🚀</button>
+  <footer>
+    上砂川町 無重力の日 記念サイト ｜
+    <a href="https://kamisunagawa-town.note.jp/" target="_blank">上砂川町note</a>
+  </footer>
+
+  <!-- 物理エンジン matter.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+  <script>
+    const { Engine, Render, Runner, Bodies, Composite, Body, World } = Matter;
+
+    const engine = Engine.create();
+    const world = engine.world;
+    engine.gravity.y = 1; // 通常の重力
+
+    const render = Render.create({
+      element: document.body,
+      engine: engine,
+      options: {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        wireframes: false,
+        background: 'transparent'
+      }
+    });
+    Render.run(render);
+    const runner = Runner.create();
+    Runner.run(runner, engine);
+
+    // 壁(床・左右)を作る
+    const W = window.innerWidth, H = window.innerHeight;
+    const wallOpts = { isStatic: true, render: { visible: false } };
+    World.add(world, [
+      Bodies.rectangle(W/2, H+30, W, 60, wallOpts),   // 床
+      Bodies.rectangle(-30, H/2, 60, H*2, wallOpts),   // 左
+      Bodies.rectangle(W+30, H/2, 60, H*2, wallOpts),  // 右
+      Bodies.rectangle(W/2, -30, W, 60, wallOpts)      // 天井
+    ]);
+
+    // 浮かせる絵文字オブジェクトを生成
+    const emojis = ['🛰️','⭐','🌙','☄️','🪐','👨‍🚀','🍎','🎈','💎','🔧'];
+    const colors = ['#ff6b6b','#feca57','#48dbfb','#1dd1a1','#f368e0','#ff9ff3'];
+    const bodies = [];
+    function spawnObjects() {
+      for (let i = 0; i < 28; i++) {
+        const size = 24 + Math.random() * 24;
+        const b = Bodies.circle(
+          80 + Math.random() * (W - 160),
+          80 + Math.random() * (H - 200),
+          size,
+          {
+            restitution: 0.8,
+            render: { fillStyle: colors[i % colors.length] }
+          }
+        );
+        b.emoji = emojis[i % emojis.length];
+        b.size = size;
+        bodies.push(b);
+      }
+      World.add(world, bodies);
+    }
+    spawnObjects();
+
+    // 絵文字を円の上に描画
+    const ctx = render.context;
+    Matter.Events.on(render, 'afterRender', () => {
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      bodies.forEach(b => {
+        ctx.save();
+        ctx.translate(b.position.x, b.position.y);
+        ctx.rotate(b.angle);
+        ctx.font = (b.size * 1.2) + 'px sans-serif';
+        ctx.fillText(b.emoji, 0, 0);
+        ctx.restore();
+      });
+    });
+
+    // ===== 無重力スタート処理 =====
+    const btn = document.getElementById('launchBtn');
+    const status = document.getElementById('status');
+    let active = false;
+
+    btn.addEventListener('click', () => {
+      if (active) return;
+      active = true;
+      btn.disabled = true;
+
+      // 無重力ON
+      engine.gravity.y = 0;
+      // 各オブジェクトにふわっとした初速を与える
+      bodies.forEach(b => {
+        Body.setVelocity(b, {
+          x: (Math.random() - 0.5) * 4,
+          y: (Math.random() - 0.5) * 4
+        });
+      });
+
+      // 10秒カウントダウン
+      let count = 10;
+      status.textContent = `🌌 無重力状態！ あと ${count} 秒`;
+      const timer = setInterval(() => {
+        count--;
+        if (count > 0) {
+          status.textContent = `🌌 無重力状態！ あと ${count} 秒`;
+        } else {
+          clearInterval(timer);
+          // 重力復活！
+          engine.gravity.y = 1;
+          status.textContent = '🌍 重力が戻りました！';
+          setTimeout(() => {
+            status.textContent = 'もう一度押すと、また無重力に！';
+            btn.disabled = false;
+            active = false;
+          }, 2500);
+        }
+      }, 1000);
+    });
+
+    // ウィンドウリサイズ対応
+    window.addEventListener('resize', () => {
+      render.canvas.width = window.innerWidth;
+      render.canvas.height = window.innerHeight;
+    });
+  </script>
+</body>
+</html>
