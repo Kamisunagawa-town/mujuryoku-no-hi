@@ -55,11 +55,18 @@
     z-index: 6; font-size: 18px; font-weight: bold; color: #7ad7ff;
     min-height: 24px;
   }
+  /* カウントダウン表示 */
+  #countdown {
+    position: fixed; top: 50px; width: 100%; text-align: center;
+    z-index: 6; font-size: 48px; font-weight: bold; color: #feca57;
+    text-shadow: 0 0 20px rgba(254,202,87,.6); min-height: 50px;
+  }
 </style>
 </head>
 <body>
   <div id="stars"></div>
   <div id="status"></div>
+  <div id="countdown"></div>
 
   <!-- note記事の再現 -->
   <article id="article">
@@ -74,12 +81,12 @@
 
     <p>それでも、その宇宙開発への貢献は高く評価され、小惑星イトカワのクレーターの一つには「Kamisunagawa（上砂川）」の名が付けられています。地下深くから宇宙へ——上砂川町は、今も無重力とともにあります。</p>
 
-    <p>さあ、下のボタンを押してください。この記事の文字が、JAMICと同じ微小重力（約 10⁻³ G）の中をゆっくりとたゆたいます。</p>
+    <p>さあ、下のボタンを押してください。JAMICと同じ約10秒間、この記事の文字が微小重力（約 10⁻³ G）でたゆたい、その後ふたたび重力を取り戻して落下します。</p>
   </article>
 
   <div class="btns">
-    <button id="zeroGBtn">文字を微小重力に 🚀</button>
-    <button id="resetBtn">元に戻す 🌍</button>
+    <button id="zeroGBtn">実験スタート 🚀</button>
+    <button id="resetBtn">最初に戻す 🌍</button>
   </div>
 
   <canvas id="floatCanvas"></canvas>
@@ -89,13 +96,15 @@
   <script>
     const { Engine, Render, Runner, Bodies, Body, World } = Matter;
 
-    const zeroGBtn = document.getElementById('zeroGBtn');
-    const resetBtn = document.getElementById('resetBtn');
-    const status   = document.getElementById('status');
-    const canvas   = document.getElementById('floatCanvas');
-    const article  = document.getElementById('article');
+    const zeroGBtn  = document.getElementById('zeroGBtn');
+    const resetBtn  = document.getElementById('resetBtn');
+    const status    = document.getElementById('status');
+    const countdown = document.getElementById('countdown');
+    const canvas    = document.getElementById('floatCanvas');
+    const article   = document.getElementById('article');
 
     let engine, render, runner, letterBodies = [], running = false;
+    let countTimer = null, endTimer = null;
 
     // ===== 記事の文字を1文字ずつ <span> に分割 =====
     function splitText() {
@@ -114,12 +123,11 @@
     }
     splitText();
 
-    // ===== 微小重力スタート =====
+    // ===== 実験スタート =====
     zeroGBtn.addEventListener('click', () => {
       if (running) return;
       running = true;
       zeroGBtn.disabled = true;
-      status.textContent = '🌌 微小重力状態（約 10⁻³ G）… JAMICを再現中';
 
       const W = window.innerWidth, H = window.innerHeight;
       canvas.width = W; canvas.height = H;
@@ -127,7 +135,7 @@
 
       // 物理エンジン準備
       engine = Engine.create();
-      engine.gravity.y = 0.001; // ★微小重力（約 10⁻³ G）。完全な0Gではない
+      engine.gravity.y = 0.001; // ★微小重力（約 10⁻³ G）からスタート
       render = Render.create({
         canvas: canvas, engine: engine,
         options: { width: W, height: H, wireframes: false, background: 'transparent' }
@@ -136,7 +144,7 @@
       runner = Runner.create();
       Runner.run(runner, engine);
 
-      // 壁（画面外に逃げないように）
+      // 壁（床・左右・天井）
       const wallOpts = { isStatic: true, render: { visible: false } };
       World.add(engine.world, [
         Bodies.rectangle(W/2, H+40, W, 80, wallOpts),
@@ -145,12 +153,12 @@
         Bodies.rectangle(W/2, -40, W, 80, wallOpts)
       ]);
 
-      // 各文字の現在位置に物理ボディを作り、文字は非表示にする
+      // 各文字の現在位置に物理ボディを作る
       letterBodies = [];
       const spans = article.querySelectorAll('.word');
       spans.forEach(span => {
         const ch = span.textContent.trim();
-        if (!ch) return; // 空白はスキップ
+        if (!ch) return;
         const r = span.getBoundingClientRect();
         const fontSize = parseFloat(getComputedStyle(span).fontSize);
         const body = Bodies.rectangle(
@@ -162,7 +170,7 @@
         body.char = ch;
         body.fontSize = fontSize;
         letterBodies.push(body);
-        span.style.visibility = 'hidden'; // 元の文字を隠す
+        span.style.visibility = 'hidden';
         // ごくわずかな初速（微小重力らしく静かにたゆたう）
         Body.setVelocity(body, {
           x: (Math.random() - 0.5) * 1.2,
@@ -187,13 +195,43 @@
           ctx.restore();
         });
       });
+
+      // ===== 10秒間の微小重力カウントダウン =====
+      status.textContent = '🌌 微小重力状態（約 10⁻³ G）… JAMICを再現中';
+      let count = 10;
+      countdown.textContent = count;
+      countTimer = setInterval(() => {
+        count--;
+        if (count > 0) {
+          countdown.textContent = count;
+        } else if (count === 0) {
+          countdown.textContent = '0';
+        } else {
+          clearInterval(countTimer);
+        }
+      }, 1000);
+
+      // ===== 10秒後に重力を取り戻す =====
+      endTimer = setTimeout(() => {
+        engine.gravity.y = 1; // ★地上の1Gに復帰 → 文字が落下
+        // 空気抵抗も通常に戻して自然に落下
+        letterBodies.forEach(b => { b.frictionAir = 0.01; });
+        status.textContent = '🌍 重力が戻りました！ 文字が落下します';
+        countdown.textContent = '';
+        // 落下が終わるころに操作可能化
+        setTimeout(() => {
+          status.textContent = '「最初に戻す」で記事を読み直せます';
+        }, 3000);
+      }, 10000); // 10秒間の微小重力
     });
 
-    // ===== 元に戻す =====
+    // ===== 最初に戻す =====
     resetBtn.addEventListener('click', () => {
       if (!running) return;
       running = false;
-      // 物理エンジンを停止・破棄
+      // タイマー・物理エンジンを停止・破棄
+      if (countTimer) clearInterval(countTimer);
+      if (endTimer) clearTimeout(endTimer);
       if (render) { Render.stop(render); }
       if (runner) { Runner.stop(runner); }
       if (engine) { World.clear(engine.world); Engine.clear(engine); }
@@ -203,6 +241,7 @@
       // 元の文字を表示し直す
       article.querySelectorAll('.word').forEach(s => s.style.visibility = 'visible');
       status.textContent = '';
+      countdown.textContent = '';
       zeroGBtn.disabled = false;
     });
   </script>
