@@ -31,7 +31,7 @@
   #article h1 { font-size: 28px; letter-spacing: 1px; margin-bottom: 6px; }
   #article .date { font-size: 14px; color: #7ad7ff; margin-bottom: 24px; }
   #article p { font-size: 16px; line-height: 2; margin-bottom: 20px; }
-  /* 浮遊させる単語のラッパー */
+  /* 浮遊させる文字のラッパー */
   .word { display: inline-block; white-space: nowrap; }
   /* 操作ボタン */
   .btns {
@@ -74,12 +74,11 @@
 
     <p>それでも、その宇宙開発への貢献は高く評価され、小惑星イトカワのクレーターの一つには「Kamisunagawa（上砂川）」の名が付けられています。地下深くから宇宙へ——上砂川町は、今も無重力とともにあります。</p>
 
-    <p>さあ、下のボタンを押してください。この記事の文字が、重力を失って浮かび上がります。</p>
+    <p>さあ、下のボタンを押してください。この記事の文字が、JAMICと同じ微小重力（約 10⁻³ G）の中をゆっくりとたゆたいます。</p>
   </article>
 
-  <div id="status"></div>
   <div class="btns">
-    <button id="zeroGBtn">文字を無重力に 🚀</button>
+    <button id="zeroGBtn">文字を微小重力に 🚀</button>
     <button id="resetBtn">元に戻す 🌍</button>
   </div>
 
@@ -104,12 +103,10 @@
       ps.forEach(p => {
         const text = p.textContent;
         p.textContent = '';
-        // 単語（日本語は1文字ずつ）にして折り返し可能に
         [...text].forEach(ch => {
           const span = document.createElement('span');
           span.className = 'word';
           span.textContent = ch;
-          // スペースは幅を確保
           if (ch === ' ') span.innerHTML = '&nbsp;';
           p.appendChild(span);
         });
@@ -117,12 +114,12 @@
     }
     splitText();
 
-    // ===== 無重力スタート =====
+    // ===== 微小重力スタート =====
     zeroGBtn.addEventListener('click', () => {
       if (running) return;
       running = true;
       zeroGBtn.disabled = true;
-      status.textContent = '🌌 文字が無重力に浮かんでいます…';
+      status.textContent = '🌌 微小重力状態（約 10⁻³ G）… JAMICを再現中';
 
       const W = window.innerWidth, H = window.innerHeight;
       canvas.width = W; canvas.height = H;
@@ -130,7 +127,7 @@
 
       // 物理エンジン準備
       engine = Engine.create();
-      engine.gravity.y = 0; // ★無重力
+      engine.gravity.y = 0.001; // ★微小重力（約 10⁻³ G）。完全な0Gではない
       render = Render.create({
         canvas: canvas, engine: engine,
         options: { width: W, height: H, wireframes: false, background: 'transparent' }
@@ -159,19 +156,19 @@
         const body = Bodies.rectangle(
           r.left + r.width/2, r.top + r.height/2,
           r.width || fontSize, r.height || fontSize,
-          { restitution: 0.6, frictionAir: 0.01,
+          { restitution: 0.6, frictionAir: 0.001,
             render: { visible: false } }
         );
         body.char = ch;
         body.fontSize = fontSize;
         letterBodies.push(body);
         span.style.visibility = 'hidden'; // 元の文字を隠す
-        // ふわっと初速
+        // ごくわずかな初速（微小重力らしく静かにたゆたう）
         Body.setVelocity(body, {
-          x: (Math.random() - 0.5) * 5,
-          y: (Math.random() - 0.5) * 5
+          x: (Math.random() - 0.5) * 1.2,
+          y: (Math.random() - 0.5) * 1.2
         });
-        Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.1);
+        Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.02);
       });
       World.add(engine.world, letterBodies);
 
