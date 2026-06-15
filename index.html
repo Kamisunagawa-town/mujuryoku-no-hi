@@ -10,6 +10,7 @@
     font-family: "Hiragino Sans", "Meiryo", sans-serif;
     background: linear-gradient(180deg, #0b1026 0%, #1a2151 100%);
     color: #fff; overflow: hidden; text-align: center;
+    transition: transform .05s ease-out;
   }
   #stars {
     position: fixed; inset: 0; z-index: 0;
@@ -28,17 +29,24 @@
     font-size: 18px; margin-top: 8px; min-height: 26px;
     color: #7ad7ff; font-weight: bold;
   }
-  #launchBtn {
-    position: relative; z-index: 2;
-    margin-top: 14px; padding: 14px 32px;
-    font-size: 18px; font-weight: bold;
-    color: #0b1026; background: #7ad7ff; border: none;
-    border-radius: 50px; cursor: pointer;
-    box-shadow: 0 0 20px rgba(122,215,255,.6);
+  .btns { position: relative; z-index: 2; margin-top: 14px; }
+  button {
+    margin: 6px;
+    padding: 14px 28px;
+    font-size: 17px; font-weight: bold;
+    border: none; border-radius: 50px; cursor: pointer;
     transition: transform .1s;
   }
-  #launchBtn:hover { transform: scale(1.05); }
-  #launchBtn:disabled { opacity: .5; cursor: not-allowed; }
+  button:hover { transform: scale(1.05); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  #launchBtn {
+    color: #0b1026; background: #7ad7ff;
+    box-shadow: 0 0 20px rgba(122,215,255,.6);
+  }
+  #shakeBtn {
+    color: #0b1026; background: #feca57;
+    box-shadow: 0 0 20px rgba(254,202,87,.6);
+  }
   canvas { position: fixed; inset: 0; z-index: 1; }
   footer {
     position: fixed; bottom: 8px; width: 100%;
@@ -55,7 +63,10 @@
     <p class="sub">旧JAMICでは立坑で約10秒間の無重力を再現していました</p>
   </header>
   <div id="status">ボタンを押すと10秒間、無重力になります</div>
-  <button id="launchBtn">無重力スタート 🚀</button>
+  <div class="btns">
+    <button id="launchBtn">無重力スタート 🚀</button>
+    <button id="shakeBtn">箱を揺らす 🫨</button>
+  </div>
   <footer>
     上砂川町 無重力の日 記念サイト ｜
     <a href="https://kamisunagawa-town.note.jp/" target="_blank">上砂川町note</a>
@@ -84,7 +95,7 @@
     const runner = Runner.create();
     Runner.run(runner, engine);
 
-    // 壁(床・左右)を作る
+    // 壁(床・左右・天井)を作る
     const W = window.innerWidth, H = window.innerHeight;
     const wallOpts = { isStatic: true, render: { visible: false } };
     World.add(world, [
@@ -133,10 +144,49 @@
       });
     });
 
+    // ===== 共通：箱を揺らす関数 =====
+    // duration ミリ秒だけ画面を揺らし、中身をかき混ぜる
+    function shakeBox(duration) {
+      const shakeInterval = setInterval(() => {
+        const dx = (Math.random() - 0.5) * 24;
+        const dy = (Math.random() - 0.5) * 24;
+        document.body.style.transform = `translate(${dx}px, ${dy}px)`;
+        bodies.forEach(b => {
+          Body.applyForce(b, b.position, {
+            x: (Math.random() - 0.5) * 0.006 * b.mass,
+            y: (Math.random() - 0.5) * 0.006 * b.mass
+          });
+        });
+      }, 60);
+
+      setTimeout(() => {
+        clearInterval(shakeInterval);
+        document.body.style.transform = 'translate(0, 0)';
+      }, duration);
+
+      return shakeInterval;
+    }
+
+    // ===== 「箱を揺らす」ボタン =====
+    const shakeBtn = document.getElementById('shakeBtn');
+    let shaking = false;
+    shakeBtn.addEventListener('click', () => {
+      if (shaking) return;
+      shaking = true;
+      shakeBtn.disabled = true;
+      // 1.2秒間だけ揺らす
+      shakeBox(1200);
+      setTimeout(() => {
+        shaking = false;
+        shakeBtn.disabled = false;
+      }, 1200);
+    });
+
     // ===== 無重力スタート処理 =====
     const btn = document.getElementById('launchBtn');
     const status = document.getElementById('status');
     let active = false;
+    let gravShake = null;
 
     btn.addEventListener('click', () => {
       if (active) return;
@@ -148,10 +198,23 @@
       // 各オブジェクトにふわっとした初速を与える
       bodies.forEach(b => {
         Body.setVelocity(b, {
-          x: (Math.random() - 0.5) * 4,
-          y: (Math.random() - 0.5) * 4
+          x: (Math.random() - 0.5) * 6,
+          y: (Math.random() - 0.5) * 6
         });
       });
+
+      // 無重力中はずっと揺らし続ける（10秒間）
+      gravShake = setInterval(() => {
+        const dx = (Math.random() - 0.5) * 24;
+        const dy = (Math.random() - 0.5) * 24;
+        document.body.style.transform = `translate(${dx}px, ${dy}px)`;
+        bodies.forEach(b => {
+          Body.applyForce(b, b.position, {
+            x: (Math.random() - 0.5) * 0.004 * b.mass,
+            y: (Math.random() - 0.5) * 0.004 * b.mass
+          });
+        });
+      }, 60);
 
       // 10秒カウントダウン
       let count = 10;
@@ -162,6 +225,10 @@
           status.textContent = `🌌 無重力状態！ あと ${count} 秒`;
         } else {
           clearInterval(timer);
+          // 揺れを止めて画面を元に戻す
+          clearInterval(gravShake);
+          gravShake = null;
+          document.body.style.transform = 'translate(0, 0)';
           // 重力復活！
           engine.gravity.y = 1;
           status.textContent = '🌍 重力が戻りました！';
